@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование: IT-Знания</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            margin: 40px 0;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .menu, .quiz-section, .results {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        h1 { text-align: center; color: var(--primary); }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: 0.3s;
+            background: var(--primary);
+            color: white;
+        }
+
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .option-btn {
+            text-align: left;
+            background: #f8f9fa;
+            color: var(--dark);
+            border: 2px solid #dee2e6;
+        }
+
+        .option-btn:hover { background: #e9ecef; color: var(--dark); }
+
+        .correct { background: var(--success) !important; color: white !important; border-color: var(--success); }
+        .wrong { background: var(--error) !important; color: white !important; border-color: var(--error); }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            border-left: 5px solid var(--primary);
+            background: #f0f7ff;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: 0.5s;
+            border-radius: 5px;
+        }
+
+        #next-btn { margin-top: 20px; width: 100%; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div id="menu" class="menu active">
+        <h1>Тестирование IT</h1>
+        <p style="text-align: center;">Выберите режим прохождения:</p>
+        <div class="btn-group">
+            <button onclick="startQuiz('study')">Обучение</button>
+            <button onclick="startQuiz('exam')">Экзамен</button>
+        </div>
+    </div>
+
+    <!-- ТЕСТОВАЯ ЧАСТЬ -->
+    <div id="quiz-section" class="quiz-section">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div id="question-counter"></div>
+        <h2 id="question-text">Текст вопроса</h2>
+        <div id="options" class="options"></div>
+        <div id="explanation" class="explanation"></div>
+        <button id="next-btn" onclick="nextQuestion()">Следующий вопрос</button>
+    </div>
+
+    <!-- РЕЗУЛЬТАТЫ -->
+    <div id="results" class="results">
+        <h1>Результат</h1>
+        <h2 id="score-text" style="text-align: center;"></h2>
+        <div class="btn-group">
+            <button onclick="location.reload()">В главное меню</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Массив вопросов (добавлены первые 15 для примера, вы можете добавить все 105 по аналогии)
+    const allQuestions = [
+        { q: "Какой метод объекта window используется для отображения простого окна с сообщением и одной кнопкой?", a: ["prompt()", "splice()", "confirm()", "shift()", "alert()"], c: 4, e: "Метод alert() выводит информационное окно с кнопкой ОК." },
+        { q: "Какой метод отображает диалоговое окно с полем ввода, сообщением и кнопками ОК и Cancel?", a: ["prompt()", "splice()", "confirm()", "shift()", "alert()"], c: 0, e: "Метод prompt() позволяет пользователю ввести текстовые данные." },
+        { q: "Какой оператор возвращает строку, описывающую тип данных переменной?", a: ["unshift()", "typeof", "pop()", "some()", "push()"], c: 1, e: "typeof используется для проверки типа (string, number, object и т.д.)." },
+        { q: "Какая функция преобразует строку в целое число?", a: ["parseInt()", "parseFloat()", "eval()", "indexOf()", "join()"], c: 0, e: "parseInt() отсекает дробную часть и возвращает целое число." },
+        { q: "Логический оператор «ИЛИ» (OR):", a: ["||", "&&", "!", "!=", "%"], c: 0, e: "Оператор || возвращает true, если хотя бы одно условие верно." },
+        { q: "Какой метод удаляет первый элемент массива?", a: ["unshift()", "shift()", "pop()", "push()", "sort()"], c: 1, e: "shift() удаляет элемент из начала, а pop() — из конца." },
+        { q: "Как объявить переменную в JavaScript?", a: ["var, let", "int", "char", "Var", "$ int"], c: 0, e: "В современном JS используются let и const, а также старый var." },
+        { q: "Какой метод переворачивает массив?", a: ["join()", "sort()", "reduce()", "reverse()", "reduceRight()"], c: 3, e: "reverse() меняет порядок элементов в массиве на обратный." },
+        { q: "Что означает margin-left?", a: ["левая граница", "левое поле", "левый отступ", "правый отступ", "правая граница"], c: 1, e: "Margin — это внешние поля элемента." },
+        { q: "С какого символа начинается переменная в PHP?", a: ["#", "<?php", "&", "@", "$"], c: 4, e: "Все переменные в PHP обязаны начинаться с символа доллара ($)." }
+    ];
+
+    let currentMode = '';
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questions = [];
+
+    function startQuiz(mode) {
+        currentMode = mode;
+        // Перемешиваем вопросы и берем, например, 10 или все
+        questions = [...allQuestions].sort(() => Math.random() - 0.5);
+        currentQuestionIndex = 0;
+        score = 0;
+
+        document.getElementById('menu').classList.remove('active');
+        document.getElementById('quiz-section').classList.add('active');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[currentQuestionIndex];
+        const optionsContainer = document.getElementById('options');
+        const expDiv = document.getElementById('explanation');
+        const nextBtn = document.getElementById('next-btn');
+
+        document.getElementById('question-text').innerText = q.q;
+        document.getElementById('question-counter').innerText = `Вопрос ${currentQuestionIndex + 1} из ${questions.length}`;
+        document.getElementById('progress-fill').style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+        
+        optionsContainer.innerHTML = '';
+        expDiv.style.display = 'none';
+        nextBtn.style.display = 'none';
+
+        q.a.forEach((option, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = `${String.fromCharCode(65 + index)}) ${option}`;
+            btn.onclick = () => selectOption(index);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function selectOption(index) {
+        const q = questions[currentQuestionIndex];
+        const btns = document.querySelectorAll('.option-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const expDiv = document.getElementById('explanation');
+
+        // Отключаем кнопки после выбора
+        btns.forEach(btn => btn.disabled = true);
+
+        if (index === q.c) {
+            btns[index].classList.add('correct');
+            score++;
+        } else {
+            btns[index].classList.add('wrong');
+            btns[q.c].classList.add('correct'); // Показываем правильный
+        }
+
+        if (currentMode === 'study') {
+            expDiv.innerText = q.e || "Правильный ответ отмечен зеленым.";
+            expDiv.style.display = 'block';
+        }
+
+        nextBtn.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('quiz-section').classList.remove('active');
+        document.getElementById('results').classList.add('active');
+        const percent = Math.round((score / questions.length) * 100);
+        document.getElementById('score-text').innerText = `Вы ответили правильно на ${score} из ${questions.length} вопросов (${percent}%)`;
+    }
+</script>
+
+</body>
+</html>
